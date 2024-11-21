@@ -1,0 +1,17 @@
+../Core/Src/main.c:94:5:main	8	static
+../Core/Src/main.c:152:6:SystemClock_Config	88	static
+../Core/Src/main.c:199:13:MX_ADC1_Init	24	static
+../Core/Src/main.c:246:13:MX_TIM1_Init	96	static
+../Core/Src/main.c:329:13:MX_TIM2_Init	32	static
+../Core/Src/main.c:374:13:MX_TIM3_Init	64	static
+../Core/Src/main.c:432:13:MX_TIM4_Init	48	static
+../Core/Src/main.c:490:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:539:9:poll_speed	16	static
+../Core/Src/main.c:558:6:start_pwm_C_N	16	static
+../Core/Src/main.c:564:6:stop_pwm_C_N	16	static
+../Core/Src/main.c:584:6:set_pin_as_gpio_high	16	static
+../Core/Src/main.c:607:6:set_pin_as_pwm	24	static
+../Core/Src/main.c:633:6:HAL_GPIO_EXTI_Callback	24	static
+../Core/Src/main.c:724:6:HAL_ADC_ConvCpltCallback	24	static
+../Core/Src/main.c:736:6:HAL_TIM_IC_CaptureCallback	16	static
+../Core/Src/main.c:746:6:Error_Handler	4	static,ignoring_inline_asm
