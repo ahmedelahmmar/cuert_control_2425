@@ -1,3 +1,0 @@
-../hall_sensor/hall_sensor.c:10:6:init_hall_sensor	24	static
-../hall_sensor/hall_sensor.c:16:9:read_hall_sensor	16	static
-../hall_sensor/hall_sensor.c:21:6:update_hall_state	24	static
