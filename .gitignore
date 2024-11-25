@@ -1,6 +1,7 @@
 #settings
-.settings/language.settings.xml
-!.settings/org.eclipse.core.resources.prefs
+sensorless_controller/.settings/language.settings.xml
+sensorless_controller/.settings/stm32cubeide.project.prefs
+!sensorless_controller/.settings/org.eclipse.core.resources.prefs
 
 #metadata
 .metadata/
