@@ -34,7 +34,7 @@
 
 /* ICU PD */
 #define ICU_TIMCLOCK 48000000
-#define ICU_PRESCALAR 3663
+#define ICU_TIMEOUT_COUNTS 2
 
 /* TIM2 PD*/
 #define TIM2_CLOCKRATE 48000000
@@ -94,8 +94,9 @@ HALL_STATE hstate;
 volatile uint8_t Throttle_percent = 0;
 
 /* ICU Variables */
-float frequency = 0;
-float motor_rpm = 0;
+volatile float hall_frequency = 0;
+volatile float motor_rpm = 0;
+volatile uint8_t ICU_timeout_count = 0;
 
 /* USER CODE END 0 */
 
@@ -140,7 +141,7 @@ int main(void)
 	init_hall_sensor(&hs3, GPIOB, GPIO_PIN_4);
 
 	HAL_TIM_Base_Start(&htim3); // Start Timer3 (Trigger Source For ADC1)
-	HAL_ADC_Start_IT(&hadc1);   // Start ADC Conversion
+	HAL_ADC_Start_IT(&hadc1);   // 	Start ADC Conversion
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3);
 	/* USER CODE END 2 */
@@ -250,6 +251,7 @@ static void MX_ADC1_Init(void)
 	/* USER CODE BEGIN ADC1_Init 2 */
 
 	/* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
@@ -336,6 +338,7 @@ static void MX_TIM1_Init(void)
 
 	/* USER CODE END TIM1_Init 2 */
 	HAL_TIM_MspPostInit(&htim1);
+
 }
 
 /**
@@ -359,9 +362,9 @@ static void MX_TIM2_Init(void)
 
 	/* USER CODE END TIM2_Init 1 */
 	htim2.Instance = TIM2;
-	htim2.Init.Prescaler = 44651 - 1;
+	htim2.Init.Prescaler = 65535;
 	htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim2.Init.Period = 5 - 1;
+	htim2.Init.Period = 732 - 1;
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 	if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -382,6 +385,7 @@ static void MX_TIM2_Init(void)
 	/* USER CODE BEGIN TIM2_Init 2 */
 
 	/* USER CODE END TIM2_Init 2 */
+
 }
 
 /**
@@ -442,6 +446,7 @@ static void MX_TIM3_Init(void)
 	/* USER CODE BEGIN TIM3_Init 2 */
 
 	/* USER CODE END TIM3_Init 2 */
+
 }
 
 /**
@@ -467,7 +472,7 @@ static void MX_TIM4_Init(void)
 
 	/* USER CODE END TIM4_Init 1 */
 	htim4.Instance = TIM4;
-	htim4.Init.Prescaler = 3662;
+	htim4.Init.Prescaler = 734 - 1;
 	htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim4.Init.Period = 65535;
 	htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -500,8 +505,10 @@ static void MX_TIM4_Init(void)
 		Error_Handler();
 	}
 	/* USER CODE BEGIN TIM4_Init 2 */
-
+	// Enable update interrupt
+	__HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
 	/* USER CODE END TIM4_Init 2 */
+
 }
 
 /**
@@ -756,6 +763,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	return;
 }
+float required_frequency;
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
@@ -763,10 +771,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	Throttle_percent = speed;
 
 	// Map Throttle_percent to frequency
-	uint8_t required_frequency = 215 * ((uint16_t) Throttle_percent) / 100;
+	required_frequency = 6 * 215 * ((float) Throttle_percent) / 100;
 
 	// Change simulated Hall sensor frequency
-	if (required_frequency == 0)
+	if ((uint32_t) required_frequency == 0)
 	{
 		// Stop Timer 2
 		__HAL_TIM_DISABLE(&htim2);
@@ -774,18 +782,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	else
 	{
 		// Get (PSC * ARR) from required frequency
-		uint32_t PSC_ARR_product = TIM2_CLOCKRATE / required_frequency;
+		float PSC_ARR_product = TIM2_CLOCKRATE / required_frequency;
 
 		// Split the required product value between PSC and ARR
 		if (PSC_ARR_product > (1 << 16))
 		{
-			TIM2->PSC = (1 << 16) - 1;
-			TIM2->ARR = (PSC_ARR_product / (1 << 16)) - 1;
+			TIM2->PSC = (uint16_t) ((PSC_ARR_product / (1 << 16)) - 1);
+			TIM2->ARR = (1 << 16) - 1;
 		}
 		else
 		{
 			TIM2->PSC = 0;
-			TIM2->ARR = PSC_ARR_product - 1;
+			TIM2->ARR = (uint16_t) (PSC_ARR_product - 1);
 		}
 
 		// Restart Timer 2 if it was stopped
@@ -801,6 +809,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
 	{
+		// Reset timeout counter
+		ICU_timeout_count = 0;
+
 		if (!captured_first) // if the first rising edge is not captured
 		{
 			IC_Val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_3); // read the first value
@@ -822,10 +833,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				difference = (0xFFFF - IC_Val1) + IC_Val2;
 			}
 
-			float refClock = (float) ICU_TIMCLOCK / (ICU_PRESCALAR);
+			float refClock = (float) ICU_TIMCLOCK / (TIM4->PSC + 1);
 
-			frequency = refClock / difference;
-			motor_rpm = 60 * frequency / 23;
+			hall_frequency = refClock / difference;
+			motor_rpm = 60 * hall_frequency / 23;
 
 			__HAL_TIM_SET_COUNTER(htim, 0); // reset the counter
 			captured_first = 0;             // set it back to false
@@ -834,6 +845,23 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 	return;
 }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Instance == TIM4)
+	{
+		// Timer 4 has overflowed
+		ICU_timeout_count++;
+		if (ICU_timeout_count >= ICU_TIMEOUT_COUNTS)
+		{
+			// Handle frequency = 0 case
+			hall_frequency = 0;
+			// Ensure timeout counter doesn't overflow
+			ICU_timeout_count = ICU_TIMEOUT_COUNTS;
+		}
+	}
+}
+
 /* USER CODE END 4 */
 
 /**
@@ -851,14 +879,14 @@ void Error_Handler(void)
 	/* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
