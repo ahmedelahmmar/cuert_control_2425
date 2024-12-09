@@ -38,6 +38,7 @@
 
 /* TIM2 PD*/
 #define TIM2_CLOCKRATE 48000000
+#define TIM2_ARR 733
 
 /* USER CODE END PD */
 
@@ -362,9 +363,9 @@ static void MX_TIM2_Init(void)
 
 	/* USER CODE END TIM2_Init 1 */
 	htim2.Instance = TIM2;
-	htim2.Init.Prescaler = 65535;
+	htim2.Init.Prescaler = 0;
 	htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim2.Init.Period = 732 - 1;
+	htim2.Init.Period = 733 - 1;
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 	if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -763,43 +764,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	return;
 }
-float required_frequency;
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
 	// speed = 100;
 	Throttle_percent = speed;
 
-	// Map Throttle_percent to frequency
-	required_frequency = 6 * 215 * ((float) Throttle_percent) / 100;
+	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
+	float required_frequency = 6 * 215 * ((float) Throttle_percent) / 100;
 
 	// Change simulated Hall sensor frequency
 	if ((uint32_t) required_frequency == 0)
 	{
-		// Stop Timer 2
-		__HAL_TIM_DISABLE(&htim2);
+		// Set minimum frequency to 1 Hz (6 Hz considering 6 PWM sates)
+		required_frequency = 6;
 	}
-	else
-	{
-		// Get (PSC * ARR) from required frequency
-		float PSC_ARR_product = TIM2_CLOCKRATE / required_frequency;
 
-		// Split the required product value between PSC and ARR
-		if (PSC_ARR_product > (1 << 16))
-		{
-			TIM2->PSC = (uint16_t) ((PSC_ARR_product / (1 << 16)) - 1);
-			TIM2->ARR = (1 << 16) - 1;
-		}
-		else
-		{
-			TIM2->PSC = 0;
-			TIM2->ARR = (uint16_t) (PSC_ARR_product - 1);
-		}
+	// Get (PSC * ARR) from required frequency
+	float PSC_ARR_product = TIM2_CLOCKRATE / required_frequency;
 
-		// Restart Timer 2 if it was stopped
-		__HAL_TIM_ENABLE(&htim2);
-	}
+	// Get PSC value (ARR = TIM2_ARR - 1)
+	float PSC_value = PSC_ARR_product / (TIM2_ARR);
+
+	// Set PSC value
+	TIM2->PSC = (uint16_t) (PSC_value - 1);
 }
+
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	static uint16_t IC_Val1 = 0;
@@ -844,22 +835,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	}
 
 	return;
-}
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if (htim->Instance == TIM4)
-	{
-		// Timer 4 has overflowed
-		ICU_timeout_count++;
-		if (ICU_timeout_count >= ICU_TIMEOUT_COUNTS)
-		{
-			// Handle frequency = 0 case
-			hall_frequency = 0;
-			// Ensure timeout counter doesn't overflow
-			ICU_timeout_count = ICU_TIMEOUT_COUNTS;
-		}
-	}
 }
 
 /* USER CODE END 4 */
