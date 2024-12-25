@@ -570,6 +570,8 @@ static void MX_GPIO_Init(void)
 
 uint8_t poll_speed()
 {
+	//gonna use it for naive digital filter
+	static uint16_t last_val = 0;
 	uint16_t adc_val;
 	/*
 	 HAL_ADC_Start(&hadc1); // start the adc
@@ -586,7 +588,11 @@ uint8_t poll_speed()
 		adc_val = 496;
 	if (adc_val > 1539)
 		adc_val = 1539;
-
+	if(adc_val >= last_val)
+		adc_val = last_val + (adc_val - last_val)/2;
+	else
+		adc_val = last_val - (last_val - adc_val)/2;
+	last_val = adc_val;
 	return (adc_val - 496) * (uint16_t) (100) / (1539 - 496);
 }
 void start_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel)
