@@ -61,6 +61,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define Throttle_Pin GPIO_PIN_0
 #define Throttle_GPIO_Port GPIOA
+#define Debugging_indicator_Pin GPIO_PIN_4
+#define Debugging_indicator_GPIO_Port GPIOA
 #define A_LOW_MOSFET_Pin GPIO_PIN_7
 #define A_LOW_MOSFET_GPIO_Port GPIOA
 #define B_LOW_MOSFET_Pin GPIO_PIN_0
