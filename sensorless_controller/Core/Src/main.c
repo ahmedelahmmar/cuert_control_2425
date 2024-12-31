@@ -160,7 +160,8 @@ int main(void)
 	while (1)
 	{
     /* USER CODE END WHILE */
-
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
+		HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
 	}
   /* USER CODE END 3 */
@@ -782,7 +783,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	default:
 		break;
 	}
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
+	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
 	return;
 }
 
