@@ -790,7 +790,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
 	// speed = 100;
-	Throttle_percent = 50;//speed;
+	Throttle_percent = speed;
 
 	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
 	float required_frequency = 6 * 215 * ((float) Throttle_percent) / 100;
