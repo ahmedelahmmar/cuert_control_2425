@@ -477,14 +477,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(Debugging_indicator_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : HALL_C_EXTI_15_Pin */
-  GPIO_InitStruct.Pin = HALL_C_EXTI_15_Pin;
+  /*Configure GPIO pin : HALL_A_EXTI_15_Pin */
+  GPIO_InitStruct.Pin = HALL_A_EXTI_15_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(HALL_C_EXTI_15_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(HALL_A_EXTI_15_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : HALL_B_EXTI_3_Pin HALL_A_EXTI_4_Pin */
-  GPIO_InitStruct.Pin = HALL_B_EXTI_3_Pin|HALL_A_EXTI_4_Pin;
+  /*Configure GPIO pins : HALL_B_EXTI_3_Pin HALL_C_EXTI_4_Pin */
+  GPIO_InitStruct.Pin = HALL_B_EXTI_3_Pin|HALL_C_EXTI_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
