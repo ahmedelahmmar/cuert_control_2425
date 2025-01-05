@@ -33,12 +33,8 @@
 /* USER CODE BEGIN PD */
 
 /* ICU PD */
-#define ICU_TIMCLOCK 48000000
-#define ICU_TIMEOUT_COUNTS 2
-
-/* TIM2 PD*/
-#define TIM2_CLOCKRATE 48000000
-#define TIM2_ARR 733
+#define ICU_TIMCLOCK 72000000
+#define ICU_MAX_TIMEOUT_COUNTS 2
 
 /* USER CODE END PD */
 
@@ -51,7 +47,6 @@
 ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
@@ -65,7 +60,6 @@ static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -87,7 +81,7 @@ void set_ready_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel);
 /*
  * Starts pwm on a channel and its complement
  */
-void start_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel , uint16_t DC);
+void start_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel, uint16_t DC);
 /*
  * Stops pwm on a channel and ~~Xits complementX~~ and sets complement to steady HIGH
  */
@@ -137,7 +131,6 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
-  MX_TIM2_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
@@ -147,12 +140,11 @@ int main(void)
 
 	HAL_TIM_Base_Start(&htim3); // Start Timer3 (Trigger Source For ADC1)
 	HAL_ADC_Start_IT(&hadc1);   // 	Start ADC Conversion
-	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3);
 
-	set_ready_pwm_C_N(&htim1, TIM_CHANNEL_1 );
-	set_ready_pwm_C_N(&htim1, TIM_CHANNEL_2 );
-	set_ready_pwm_C_N(&htim1, TIM_CHANNEL_3 );
+	set_ready_pwm_C_N(&htim1, TIM_CHANNEL_1);
+	set_ready_pwm_C_N(&htim1, TIM_CHANNEL_2);
+	set_ready_pwm_C_N(&htim1, TIM_CHANNEL_3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -160,8 +152,7 @@ int main(void)
 	while (1)
 	{
     /* USER CODE END WHILE */
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
-		HAL_Delay(1000);
+
     /* USER CODE BEGIN 3 */
 	}
   /* USER CODE END 3 */
@@ -186,7 +177,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -201,12 +192,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -283,7 +274,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 12000-1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -340,51 +331,6 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 2 */
   HAL_TIM_MspPostInit(&htim1);
-
-}
-
-/**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM2_Init(void)
-{
-
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 733-1;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-  /* USER CODE END TIM2_Init 2 */
 
 }
 
@@ -466,7 +412,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 734-1;
+  htim4.Init.Prescaler = 1097-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -522,35 +468,25 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Debugging_indicator_GPIO_Port, Debugging_indicator_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  /*Configure GPIO pin : Debugging_indicator_Pin */
+  GPIO_InitStruct.Pin = Debugging_indicator_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(Debugging_indicator_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  /*Configure GPIO pin : HALL_A_EXTI_15_Pin */
+  GPIO_InitStruct.Pin = HALL_A_EXTI_15_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(HALL_A_EXTI_15_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
+  /*Configure GPIO pins : HALL_B_EXTI_3_Pin HALL_C_EXTI_4_Pin */
+  GPIO_InitStruct.Pin = HALL_B_EXTI_3_Pin|HALL_C_EXTI_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PB5 PB6 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
@@ -589,27 +525,27 @@ uint8_t poll_speed()
 		adc_val = 496;
 	if (adc_val > 1539)
 		adc_val = 1539;
-	if(adc_val >= last_val)
-		adc_val = last_val + (adc_val - last_val)/2;
+	if (adc_val >= last_val)
+		adc_val = last_val + (adc_val - last_val) / 2;
 	else
-		adc_val = last_val - (last_val - adc_val)/2;
+		adc_val = last_val - (last_val - adc_val) / 2;
 	last_val = adc_val;
 	return (adc_val - 496) * (uint16_t) (100) / (1539 - 496);
 }
-void start_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel , uint16_t CC_VAL)
+void start_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel, uint16_t CC_VAL)
 {
 	switch (channel)
-		{
-		case TIM_CHANNEL_1:
-			htim->Instance->CCR1 = CC_VAL;
-			break;
-		case TIM_CHANNEL_2:
-			htim->Instance->CCR2 = CC_VAL;
-			break;
-		case TIM_CHANNEL_3:
-			htim->Instance->CCR3 = CC_VAL;
-			break;
-		};
+	{
+	case TIM_CHANNEL_1:
+		htim->Instance->CCR1 = CC_VAL;
+		break;
+	case TIM_CHANNEL_2:
+		htim->Instance->CCR2 = CC_VAL;
+		break;
+	case TIM_CHANNEL_3:
+		htim->Instance->CCR3 = CC_VAL;
+		break;
+	};
 }
 void set_ready_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel)
 {
@@ -717,9 +653,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	// 101 => 0 - 60 deg => A+ B- C+
 	case 5:
 		// A+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_1 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_1, CC_VAL);
 		// C+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_3 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_3, CC_VAL);
 		// B-
 		// stop pwm
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_2);
@@ -729,7 +665,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// 60 - 120 => + - -
 	case 1:
 		// A+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_1 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_1, CC_VAL);
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_2);
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_3);
 		// B-
@@ -740,9 +676,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// 120 - 180 => + + -
 	case 3:
 		// A+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_1 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_1, CC_VAL);
 		// B+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_2 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_2, CC_VAL);
 		// C-
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_3);
 		// set_pin_as_gpio_high(GPIOB, GPIO_PIN_1);
@@ -750,7 +686,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// 180 - 240 => - + -
 	case 2:
 		// B +
-		start_pwm_C_N(&htim1, TIM_CHANNEL_2 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_2, CC_VAL);
 
 		// A -
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_1);
@@ -762,9 +698,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// 240 - 300 => - + +
 	case 6:
 		// B+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_2 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_2, CC_VAL);
 		// C+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_3 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_3, CC_VAL);
 		// A-
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_1);
 		// set_pin_as_gpio_high(GPIOA, GPIO_PIN_7);
@@ -772,7 +708,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		// 300 - 360 => - - +
 	case 4:
 		// C+
-		start_pwm_C_N(&htim1, TIM_CHANNEL_3 , CC_VAL);
+		start_pwm_C_N(&htim1, TIM_CHANNEL_3, CC_VAL);
 		// A-
 		stop_pwm_C_N(&htim1, TIM_CHANNEL_1);
 		// set_pin_as_gpio_high(GPIOA, GPIO_PIN_7);
@@ -783,7 +719,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	default:
 		break;
 	}
-	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
 	return;
 }
 
@@ -792,25 +728,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	uint8_t speed = poll_speed();
 	// speed = 100;
 	Throttle_percent = speed;
-
-	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
-	float required_frequency = 6 * 215 * ((float) Throttle_percent) / 100;
-
-	// Change simulated Hall sensor frequency
-	if ((uint32_t) required_frequency == 0)
-	{
-		// Set minimum frequency to 1 Hz (6 Hz considering 6 PWM sates)
-		required_frequency = 6;
-	}
-
-	// Get (PSC * ARR) from required frequency
-	float PSC_ARR_product = TIM2_CLOCKRATE / required_frequency;
-
-	// Get PSC value (ARR = TIM2_ARR - 1)
-	float PSC_value = PSC_ARR_product / (TIM2_ARR);
-
-	// Set PSC value
-	TIM2->PSC = (uint16_t) (PSC_value - 1);
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
@@ -857,6 +774,23 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	}
 
 	return;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Instance == TIM4)
+	{
+		// Timer 4 has overflowed
+		ICU_timeout_count++;
+		if (ICU_timeout_count >= ICU_MAX_TIMEOUT_COUNTS)
+		{
+			// Handle frequency = 0 case
+			hall_frequency = 0;
+			motor_rpm = 0;
+			// Ensure timeout counter variable doesn't overflow
+			ICU_timeout_count = ICU_MAX_TIMEOUT_COUNTS;
+		}
+	}
 }
 
 /* USER CODE END 4 */

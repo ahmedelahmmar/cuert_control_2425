@@ -1,6 +1,8 @@
 #settings
 sensorless_controller/.settings/
 !sensorless_controller/.settings/org.eclipse.core.resources.prefs
+sensored_controller/.settings/
+!sensored_controller/.settings/org.eclipse.core.resources.prefs
 
 #metadata
 .metadata/
