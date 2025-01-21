@@ -790,7 +790,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
-	// speed = 100;
+	 speed = 100;
 	Throttle_percent = speed;
 
 	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
