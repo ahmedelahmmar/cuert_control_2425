@@ -282,7 +282,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 4800;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -524,7 +524,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(Debugging_indicator_GPIO_Port, Debugging_indicator_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SIM_HALL_A_Pin|SIM_HALL_B_Pin|SIM_HALL_C_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : Debugging_indicator_Pin */
   GPIO_InitStruct.Pin = Debugging_indicator_Pin;
@@ -533,23 +533,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(Debugging_indicator_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  /*Configure GPIO pin : HALL_A_EXTI_15_Pin */
+  GPIO_InitStruct.Pin = HALL_A_EXTI_15_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(HALL_A_EXTI_15_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
+  /*Configure GPIO pins : HALL_B_EXTI_3_Pin HALL_C_EXTI_4_Pin */
+  GPIO_InitStruct.Pin = HALL_B_EXTI_3_Pin|HALL_C_EXTI_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB5 PB6 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  /*Configure GPIO pins : SIM_HALL_A_Pin SIM_HALL_B_Pin SIM_HALL_C_Pin */
+  GPIO_InitStruct.Pin = SIM_HALL_A_Pin|SIM_HALL_B_Pin|SIM_HALL_C_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
@@ -789,11 +789,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
-	// speed = 100;
-	Throttle_percent = speed;
+	speed = 50;
+	// limit throttle to [10, 90]
+
+	if (speed < 10)
+	{
+		Throttle_percent = 0;
+	}
+	else if(speed > 90)
+	{
+		Throttle_percent = 90;
+	}
+	else
+	{
+		Throttle_percent = speed;
+	}
 
 	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
-	float required_frequency = 6 * 215 * ((float) Throttle_percent) / 100;
+	float required_frequency = 6;
 
 	// Change simulated Hall sensor frequency
 	if ((uint32_t) required_frequency == 0)
