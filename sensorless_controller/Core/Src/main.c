@@ -789,11 +789,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
-<<<<<<< HEAD
 	 speed = 100;
 	Throttle_percent = speed;
-=======
-	speed = 50;
+
 	// limit throttle to [10, 90]
 
 	if (speed < 10)
@@ -808,6 +806,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	{
 		Throttle_percent = speed;
 	}
+<<<<<<< HEAD
+>>>>>>> 0d28d499417d40992be59371af4a70b76732820a
+=======
 >>>>>>> 0d28d499417d40992be59371af4a70b76732820a
 
 	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
