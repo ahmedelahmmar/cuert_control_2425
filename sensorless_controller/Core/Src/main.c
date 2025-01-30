@@ -806,10 +806,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	{
 		Throttle_percent = speed;
 	}
-<<<<<<< HEAD
->>>>>>> 0d28d499417d40992be59371af4a70b76732820a
-=======
->>>>>>> 0d28d499417d40992be59371af4a70b76732820a
+
 
 	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
 	float required_frequency = 6;
