@@ -624,13 +624,14 @@ void stop_pwm_C_N(TIM_HandleTypeDef *htim, uint32_t channel)
 	switch (channel)
 	{
 	case TIM_CHANNEL_1:
-		htim->Instance->CCR1 = 0;
+		htim->Instance->CCR1 = 65535;
 		break;
 	case TIM_CHANNEL_2:
-		htim->Instance->CCR2 = 0;
+		htim->Instance->CCR2 = 65535;
 		break;
 	case TIM_CHANNEL_3:
-		htim->Instance->CCR3 = 0;
+		htim->Instance->CCR3 = 65535
+		;
 		break;
 	};
 	return;
@@ -695,7 +696,7 @@ void set_pin_as_pwm(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
 	update_hall_state(&hstate, &hs1, &hs2, &hs3);
 	//{0b101 , 0b001 , 0b011 , 0b010 , 0b110 , 0b100};
 	// transition , could be wrong , easily fixed by reordering conditions of the following cases..
@@ -789,7 +790,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	uint8_t speed = poll_speed();
-	speed = 50;
+	 speed = 100;
+	Throttle_percent = speed;
+
 	// limit throttle to [10, 90]
 
 	if (speed < 10)
@@ -804,6 +807,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	{
 		Throttle_percent = speed;
 	}
+
 
 	// Map Throttle_percent to frequency ( x6 considering 6 PWM sates )
 	float required_frequency = 6;
